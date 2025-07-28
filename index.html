@@ -27,6 +27,19 @@
     th {
       text-align: left;
     }
+    .details {
+      display: none;
+      font-size: 0.9em;
+      color: #444;
+    }
+    .details td {
+      background-color: #f9f9f9;
+    }
+    .clickable {
+      cursor: pointer;
+      color: #0077cc;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -40,9 +53,7 @@
         <th>Bewertung</th>
       </tr>
     </thead>
-    <tbody id="table-body">
-      <!-- wird per JS befüllt -->
-    </tbody>
+    <tbody id="table-body"></tbody>
   </table>
 
   <script>
@@ -51,24 +62,59 @@
       .then(data => {
         const features = data.features;
 
-        const cafes = features.map(f => {
-          const props = f.properties;
-          return {
-            name: props.name || "Unbenannt",
-            bewertung: ""  // Platzhalter für spätere Bewertung
-          };
-        });
-
-        // KEIN Zufallssortieren – Reihenfolge bleibt gleich!
-
         const tbody = document.getElementById("table-body");
-        cafes.forEach(cafe => {
+
+        features.forEach(f => {
+          const props = f.properties;
+          const name = props.name || "Unbenannt";
+          const bewertung = "";  // später dynamisch
+
+          // Hauptzeile (Name & Bewertung)
           const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${cafe.name}</td>
-            <td>${cafe.bewertung}</td>
-          `;
+          const nameCell = document.createElement("td");
+          nameCell.textContent = name;
+          nameCell.classList.add("clickable");
+
+          const ratingCell = document.createElement("td");
+          ratingCell.textContent = bewertung;
+
+          row.appendChild(nameCell);
+          row.appendChild(ratingCell);
           tbody.appendChild(row);
+
+          // Detailzeile
+          const detailRow = document.createElement("tr");
+          detailRow.className = "details";
+
+          const detailCell = document.createElement("td");
+          detailCell.colSpan = 2;
+
+          let detailHTML = "";
+
+          if (props["addr:street"]) {
+            detailHTML += `<strong>Adresse:</strong> ${props["addr:street"] || ""} ${props["addr:housenumber"] || ""}<br>`;
+          }
+
+          if (props["opening_hours"]) {
+            detailHTML += `<strong>Öffnungszeiten:</strong> ${props["opening_hours"]}<br>`;
+          }
+
+          if (props["website"]) {
+            detailHTML += `<strong>Website:</strong> <a href="${props["website"]}" target="_blank">${props["website"]}</a><br>`;
+          }
+
+          if (detailHTML === "") {
+            detailHTML = "<em>Keine weiteren Infos verfügbar.</em>";
+          }
+
+          detailCell.innerHTML = detailHTML;
+          detailRow.appendChild(detailCell);
+          tbody.appendChild(detailRow);
+
+          // Toggle Logik
+          nameCell.addEventListener("click", () => {
+            detailRow.style.display = (detailRow.style.display === "table-row") ? "none" : "table-row";
+          });
         });
       })
       .catch(err => {
@@ -76,6 +122,5 @@
         alert("Die Datei 'cafes_sorted.geojson' konnte nicht geladen werden.");
       });
   </script>
-
 </body>
 </html>
