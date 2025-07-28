@@ -2,8 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Berliner Ringbahn-Cafés</title>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <title>Otto im Café</title>
   <style>
     body {
       font-family: sans-serif;
@@ -13,6 +12,7 @@
     }
     h1 {
       text-align: center;
+      font-weight: normal;
     }
     table {
       width: 100%;
@@ -22,22 +22,21 @@
     td, th {
       padding: 0.5em;
       border-bottom: 1px solid #ccc;
+      vertical-align: top;
+    }
+    th {
+      text-align: left;
     }
   </style>
 </head>
 <body>
 
-  <h1>Berliner Ringbahn-Cafés</h1>
-  <p>
-    Diese Liste enthält Cafés innerhalb des Berliner S-Bahn-Rings. Sie ist zufällig sortiert.
-    Ich arbeite sie von oben nach unten ab und bewerte jedes Café nach dem Besuch.
-  </p>
+  <h1>Otto im Café</h1>
 
-  <table id="cafes" class="display">
+  <table>
     <thead>
       <tr>
         <th>Name</th>
-        <th>Adresse</th>
         <th>Bewertung</th>
       </tr>
     </thead>
@@ -46,50 +45,33 @@
     </tbody>
   </table>
 
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script>
     fetch("cafes.geojson")
       .then(res => res.json())
       .then(data => {
         const features = data.features;
 
-        // GeoJSON → JavaScript-Tabelle
+        // Einmal zufällig mischen und alphabetisch speichern, wenn du willst
         const cafes = features.map(f => {
           const props = f.properties;
-          const name = props.name || "Unbenannt";
-          const street = props["addr:street"] || "";
-          const number = props["addr:housenumber"] || "";
           return {
-            name: name,
-            adresse: `${street} ${number}`.trim(),
-            bewertung: ""  // Initial leer
+            name: props.name || "Unbenannt",
+            bewertung: ""  // leeres Feld für spätere Bewertung
           };
         });
 
-        // Zufällig mischen
+        // Achtung: nur einmal mischen – Reihenfolge bleibt, wenn du sie nicht mehr veränderst
         cafes.sort(() => Math.random() - 0.5);
 
-        // Tabelle füllen
+        // Tabelle befüllen
         const tbody = document.getElementById("table-body");
         cafes.forEach(cafe => {
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${cafe.name}</td>
-            <td>${cafe.adresse}</td>
             <td>${cafe.bewertung}</td>
           `;
           tbody.appendChild(row);
-        });
-
-        // DataTables aktivieren
-        $(document).ready(function () {
-          $('#cafes').DataTable({
-            order: [],
-            language: {
-              url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/de-DE.json"
-            }
-          });
         });
       })
       .catch(err => {
@@ -97,5 +79,6 @@
         alert("Die Datei 'cafes.geojson' konnte nicht geladen werden.");
       });
   </script>
+
 </body>
 </html>
