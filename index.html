@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Otto im Café</title>
   <style>
     body {
@@ -41,6 +41,10 @@
       text-decoration: none;
       font-weight: bold;
     }
+    a {
+      color: inherit;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -51,77 +55,106 @@
     <thead>
       <tr>
         <th>Name</th>
-        <th>Bewertung</th>
+        <th>Arbeitsfaktor</th>
       </tr>
     </thead>
     <tbody id="table-body"></tbody>
   </table>
 
   <script>
-    fetch("cafes_sorted.geojson")
+    const endpoint = "https://script.google.com/macros/s/AKfycbwhtvZNQvKe85OL0orF_hvCAXQ1BFpk_PVD8z5l4M-AfdNYrA4yBRQ2CDdRVkiU2iGgNw/exec";
+
+    const formatBarometer = (label, value, type) => {
+      const val = parseInt(value);
+      if (!val || val < 1 || val > 5) return null;
+
+      const interpretations = {
+        date: ["❤️ Nur Dates", "😅 Eher Quatschen", "🤷 Vielleicht", "💻 Arbeit möglich", "🧠 Ich zieh ein"],
+        sozial: ["🫂 Leute kennengelernt", "🙂 Gespräch gehabt", "😐 neutral", "😌 in Ruhe gelassen", "👻 komplett ignoriert"]
+      };
+
+      const emojiText = interpretations[type];
+      if (emojiText) {
+        return `<strong>${label}:</strong> ${emojiText[val - 1] || val}`;
+      } else {
+        return `<strong>${label}:</strong> ${val}/5`;
+      }
+    };
+
+    fetch(endpoint)
       .then(res => res.json())
       .then(data => {
-        const features = data.features;
-
         const tbody = document.getElementById("table-body");
 
-        features.forEach(f => {
-          const props = f.properties;
-          const name = props.name || "Unbenannt";
-          const bewertung = "";  // leer beim Start
+        data.features.forEach(feature => {
+          const p = feature.properties;
+          const name = p.name || "Unbenannt";
 
-          // Hauptzeile
           const row = document.createElement("tr");
           const nameCell = document.createElement("td");
           nameCell.textContent = name;
           nameCell.classList.add("clickable");
 
           const ratingCell = document.createElement("td");
-          ratingCell.textContent = bewertung;
+          ratingCell.textContent = p.arbeitsfaktor || "";
 
           row.appendChild(nameCell);
           row.appendChild(ratingCell);
           tbody.appendChild(row);
 
-          // Detailzeile
+          // Detailbereich
           const detailRow = document.createElement("tr");
           detailRow.className = "details";
-
           const detailCell = document.createElement("td");
           detailCell.colSpan = 2;
 
-          let detailHTML = "";
+          const lines = [];
 
-          if (props["addr:street"]) {
-            detailHTML += `<strong>Adresse:</strong> ${props["addr:street"] || ""} ${props["addr:housenumber"] || ""}<br>`;
+          if (p["addr:street"] || p["addr:housenumber"]) {
+            lines.push(`<strong>Adresse:</strong> ${p["addr:street"] || ""} ${p["addr:housenumber"] || ""}`);
           }
 
-          if (props["opening_hours"]) {
-            detailHTML += `<strong>Öffnungszeiten:</strong> ${props["opening_hours"]}<br>`;
+          if (p.opening_hours) {
+            lines.push(`<strong>Öffnungszeiten:</strong> ${p.opening_hours}`);
           }
 
-          if (props["website"]) {
-            detailHTML += `<strong>Website:</strong> <a href="${props["website"]}" target="_blank">${props["website"]}</a><br>`;
+          if (p.website) {
+            lines.push(`<strong>Website:</strong> <a href="${p.website}" target="_blank">${p.website}</a>`);
           }
 
-          if (detailHTML === "") {
-            detailHTML = "<em>Keine weiteren Infos verfügbar.</em>";
+          if (p.bewertet_am) {
+            lines.push(`<strong>Bewertet am:</strong> ${p.bewertet_am}`);
           }
 
-          detailCell.innerHTML = detailHTML;
+          const b1 = formatBarometer("Date-Faktor", p.datefaktor, "date");
+          const b2 = formatBarometer("Arbeits-Faktor", p.arbeitsfaktor, "normal");
+          const b3 = formatBarometer("Wohlfühlen", p.wohlfühlen, "normal");
+          const b4 = formatBarometer("Soziales Spektrum", p.sozialespektrum, "sozial");
+
+          [b1, b2, b3, b4].forEach(b => b && lines.push(b));
+
+          if (p.kommentar) {
+            lines.push(`<strong>Kommentar:</strong> ${p.kommentar}`);
+          }
+
+          if (lines.length === 0) {
+            lines.push("<em>Keine weiteren Infos verfügbar.</em>");
+          }
+
+          detailCell.innerHTML = lines.join("<br>");
           detailRow.appendChild(detailCell);
           tbody.appendChild(detailRow);
 
-          // Toggle beim Klick
           nameCell.addEventListener("click", () => {
-            detailRow.style.display = (detailRow.style.display === "table-row") ? "none" : "table-row";
+            detailRow.style.display = detailRow.style.display === "table-row" ? "none" : "table-row";
           });
         });
       })
       .catch(err => {
-        console.error("Fehler beim Laden der GeoJSON-Datei:", err);
-        alert("Die Datei 'cafes_sorted.geojson' konnte nicht geladen werden.");
+        console.error("Fehler beim Laden:", err);
+        alert("Daten konnten nicht geladen werden.");
       });
   </script>
+
 </body>
 </html>
