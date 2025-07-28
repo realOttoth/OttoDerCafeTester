@@ -46,24 +46,21 @@
   </table>
 
   <script>
-    fetch("cafes.geojson")
+    fetch("cafes_sorted.geojson")
       .then(res => res.json())
       .then(data => {
         const features = data.features;
 
-        // Einmal zufällig mischen und alphabetisch speichern, wenn du willst
         const cafes = features.map(f => {
           const props = f.properties;
           return {
             name: props.name || "Unbenannt",
-            bewertung: ""  // leeres Feld für spätere Bewertung
+            bewertung: ""  // Platzhalter für spätere Bewertung
           };
         });
 
-        // Achtung: nur einmal mischen – Reihenfolge bleibt, wenn du sie nicht mehr veränderst
-        cafes.sort(() => Math.random() - 0.5);
+        // KEIN Zufallssortieren – Reihenfolge bleibt gleich!
 
-        // Tabelle befüllen
         const tbody = document.getElementById("table-body");
         cafes.forEach(cafe => {
           const row = document.createElement("tr");
@@ -76,7 +73,7 @@
       })
       .catch(err => {
         console.error("Fehler beim Laden der GeoJSON-Datei:", err);
-        alert("Die Datei 'cafes.geojson' konnte nicht geladen werden.");
+        alert("Die Datei 'cafes_sorted.geojson' konnte nicht geladen werden.");
       });
   </script>
 
