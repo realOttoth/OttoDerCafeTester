@@ -41,9 +41,23 @@
       text-decoration: none;
       font-weight: bold;
     }
-    a {
-      color: inherit;
-      text-decoration: underline;
+    .bar-label {
+      margin-bottom: 0.2em;
+    }
+    .bar {
+      background-color: #eee;
+      height: 12px;
+      border-radius: 4px;
+      margin-bottom: 0.7em;
+    }
+    .bar-fill {
+      height: 100%;
+      background-color: #333;
+      border-radius: 4px;
+    }
+    .checkmark {
+      font-size: 1.2em;
+      text-align: right;
     }
   </style>
 </head>
@@ -55,7 +69,7 @@
     <thead>
       <tr>
         <th>Name</th>
-        <th>Arbeitsfaktor</th>
+        <th></th>
       </tr>
     </thead>
     <tbody id="table-body"></tbody>
@@ -64,22 +78,19 @@
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbwhtvZNQvKe85OL0orF_hvCAXQ1BFpk_PVD8z5l4M-AfdNYrA4yBRQ2CDdRVkiU2iGgNw/exec";
 
-    const formatBarometer = (label, value, type) => {
+    function hasAnyRating(p) {
+      return ["arbeitsfaktor", "datefaktor", "wohlfühlen", "sozialespektrum"].some(k => parseInt(p[k]) > 0);
+    }
+
+    function createBar(label, value) {
       const val = parseInt(value);
       if (!val || val < 1 || val > 5) return null;
-
-      const interpretations = {
-        date: ["❤️ Nur Dates", "😅 Eher Quatschen", "🤷 Vielleicht", "💻 Arbeit möglich", "🧠 Ich zieh ein"],
-        sozial: ["🫂 Leute kennengelernt", "🙂 Gespräch gehabt", "😐 neutral", "😌 in Ruhe gelassen", "👻 komplett ignoriert"]
-      };
-
-      const emojiText = interpretations[type];
-      if (emojiText) {
-        return `<strong>${label}:</strong> ${emojiText[val - 1] || val}`;
-      } else {
-        return `<strong>${label}:</strong> ${val}/5`;
-      }
-    };
+      const width = val * 20; // 1–5 → 20%–100%
+      return `
+        <div class="bar-label"><strong>${label}</strong></div>
+        <div class="bar"><div class="bar-fill" style="width: ${width}%;"></div></div>
+      `;
+    }
 
     fetch(endpoint)
       .then(res => res.json())
@@ -95,11 +106,12 @@
           nameCell.textContent = name;
           nameCell.classList.add("clickable");
 
-          const ratingCell = document.createElement("td");
-          ratingCell.textContent = p.arbeitsfaktor || "";
+          const checkmarkCell = document.createElement("td");
+          checkmarkCell.className = "checkmark";
+          checkmarkCell.textContent = hasAnyRating(p) ? "✔️" : "";
 
           row.appendChild(nameCell);
-          row.appendChild(ratingCell);
+          row.appendChild(checkmarkCell);
           tbody.appendChild(row);
 
           // Detailbereich
@@ -126,12 +138,14 @@
             lines.push(`<strong>Bewertet am:</strong> ${p.bewertet_am}`);
           }
 
-          const b1 = formatBarometer("Date-Faktor", p.datefaktor, "date");
-          const b2 = formatBarometer("Arbeits-Faktor", p.arbeitsfaktor, "normal");
-          const b3 = formatBarometer("Wohlfühlen", p.wohlfühlen, "normal");
-          const b4 = formatBarometer("Soziales Spektrum", p.sozialespektrum, "sozial");
+          const bars = [
+            createBar("Arbeitsfaktor", p.arbeitsfaktor),
+            createBar("Datefaktor", p.datefaktor),
+            createBar("Wohlfühlen", p.wohlfühlen),
+            createBar("Sozialespektrum", p.sozialespektrum),
+          ].filter(Boolean).join("");
 
-          [b1, b2, b3, b4].forEach(b => b && lines.push(b));
+          if (bars) lines.push(bars);
 
           if (p.kommentar) {
             lines.push(`<strong>Kommentar:</strong> ${p.kommentar}`);
