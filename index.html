@@ -37,8 +37,9 @@
     }
     .clickable {
       cursor: pointer;
-      color: #0077cc;
-      text-decoration: underline;
+      color: inherit;
+      text-decoration: none;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -67,9 +68,9 @@
         features.forEach(f => {
           const props = f.properties;
           const name = props.name || "Unbenannt";
-          const bewertung = "";  // später dynamisch
+          const bewertung = "";  // leer beim Start
 
-          // Hauptzeile (Name & Bewertung)
+          // Hauptzeile
           const row = document.createElement("tr");
           const nameCell = document.createElement("td");
           nameCell.textContent = name;
@@ -111,7 +112,7 @@
           detailRow.appendChild(detailCell);
           tbody.appendChild(detailRow);
 
-          // Toggle Logik
+          // Toggle beim Klick
           nameCell.addEventListener("click", () => {
             detailRow.style.display = (detailRow.style.display === "table-row") ? "none" : "table-row";
           });
