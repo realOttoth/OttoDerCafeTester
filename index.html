@@ -22,7 +22,7 @@
     td, th {
       padding: 0.5em;
       border-bottom: 1px solid #ccc;
-      vertical-align: top;
+      vertical-align: middle;
     }
     th {
       text-align: left;
@@ -42,6 +42,7 @@
       font-weight: bold;
     }
     .bar-label {
+      margin-top: 1em;
       margin-bottom: 0.2em;
     }
     .bar {
@@ -49,15 +50,26 @@
       height: 12px;
       border-radius: 4px;
       margin-bottom: 0.7em;
+      position: relative;
     }
     .bar-fill {
       height: 100%;
-      background-color: #333;
       border-radius: 4px;
+    }
+    .arbeitsfaktor    .bar-fill { background-color: #3b82f6; }
+    .datefaktor       .bar-fill { background-color: #ec4899; }
+    .wohlfühlen       .bar-fill { background-color: #22c55e; }
+    .sozialespektrum  .bar-fill { background-color: #a855f7; }
+    .sozialespektrum .bar-fill-friends {
+      background-color: #f97316;
+      position: absolute;
+      top: 0;
+      right: 0;
     }
     .checkmark {
       font-size: 1.2em;
       text-align: right;
+      vertical-align: middle;
     }
   </style>
 </head>
@@ -82,13 +94,43 @@
       return ["arbeitsfaktor", "datefaktor", "wohlfühlen", "sozialespektrum"].some(k => parseInt(p[k]) > 0);
     }
 
-    function createBar(label, value) {
+    function formatDate(dateStr) {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      return d.toLocaleDateString("de-DE");
+    }
+
+    function createBar(label, value, key) {
       const val = parseInt(value);
       if (!val || val < 1 || val > 5) return null;
-      const width = val * 20; // 1–5 → 20%–100%
+      const width = val * 20;
+
       return `
         <div class="bar-label"><strong>${label}</strong></div>
-        <div class="bar"><div class="bar-fill" style="width: ${width}%;"></div></div>
+        <div class="bar ${key}">
+          <div class="bar-fill" style="width: ${width}%;"></div>
+        </div>
+      `;
+    }
+
+    function createSozialespektrumBar(value) {
+      const val = parseInt(value);
+      if (!val || val < 1 || val > 5) return null;
+
+      const ruheWidth = val * 20;
+      const freundeWidth = (5 - val + 1) * 20;
+
+      return `
+        <div class="bar-label"><strong>Soziales Spektrum</strong></div>
+        <div class="bar sozialespektrum">
+          <div class="bar-fill" style="width: ${ruheWidth}%;"></div>
+          <div class="bar-fill bar-fill-friends" style="width: ${freundeWidth}%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666;">
+          <span>👻 In Ruhe gelassen</span>
+          <span>🫂 Freunde finden</span>
+        </div>
       `;
     }
 
@@ -135,14 +177,14 @@
           }
 
           if (p.bewertet_am) {
-            lines.push(`<strong>Bewertet am:</strong> ${p.bewertet_am}`);
+            lines.push(`<strong>Bewertet am:</strong> ${formatDate(p.bewertet_am)}`);
           }
 
           const bars = [
-            createBar("Arbeitsfaktor", p.arbeitsfaktor),
-            createBar("Datefaktor", p.datefaktor),
-            createBar("Wohlfühlen", p.wohlfühlen),
-            createBar("Sozialespektrum", p.sozialespektrum),
+            createBar("Wohlfühlen", p.wohlfühlen, "wohlfühlen"),
+            createBar("Datefaktor", p.datefaktor, "datefaktor"),
+            createBar("Arbeitsfaktor", p.arbeitsfaktor, "arbeitsfaktor"),
+            createSozialespektrumBar(p.sozialespektrum),
           ].filter(Boolean).join("");
 
           if (bars) lines.push(bars);
